@@ -1,0 +1,106 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id           String       @id @default(uuid())
+  title        String
+  description  String?
+  location     String?
+  image        String?
+  clean_name   String?      @unique
+  start_date   DateTime
+  end_date     DateTime?
+  prices       Price[]      @relation("EventPrices")
+  gallery      Gallery[]
+  attendees    Attendee[]
+  eventUrl     EventUrl[]
+  eventChat    EventChat[]
+}
+
+model Price {
+  id            String      @id @default(uuid())
+  event_id      String?
+  event         Event?       @relation("EventPrices", fields: [event_id], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  amount        Int 
+  attendees     Int?
+  order_amount  Int         @default(0)
+  withChips     String?     @default("without")
+  attendee      Attendee[]
+
+  @@unique([event_id, title])
+}
+
+model Gallery {
+  id            String   @id @default(uuid())
+  event_id      String
+  event         Event    @relation(fields: [event_id], references: [id])
+  name          String
+  image         String?
+}
+
+model Attendee {
+  id              String    @id @default(uuid())
+  event_id        String
+  event           Event     @relation(fields: [event_id], references: [id])
+  event_price_id  String
+  event_price     Price     @relation(fields: [event_price_id], references: [id])
+  name            String
+  image           String
+  email           String?
+  phone           String?
+  price_category  String?
+  ticket          String?
+  link            String?
+  token           String?
+  checkedIn       Boolean    @default(false) 
+  thankyouMail    Boolean    @default(false)
+  eventChat       EventChat[] 
+}
+
+model Token {
+  id     String  @id @default(uuid())
+  token  String  
+  used   Boolean @default(false)
+}
+
+model EventUrl {
+  id               String  @id @default(uuid())
+  eventId          String
+  event            Event   @relation(fields: [eventId], references: [id]) 
+  eventAttendeeId  String?
+  eventUrl         String 
+  deviceType       String  
+}
+
+model Paystack {
+  id                String  @id @default(uuid())
+  accessCode        String
+  authorizationUrl  String
+  reference         String
+  metadata          String 
+}
+
+model EventChat {
+  id          String     @id @default(uuid())
+  eventId     String
+  event       Event      @relation(fields: [eventId], references: [id])
+  attendeeId  String
+  attendee    Attendee   @relation(fields: [attendeeId], references: [id]) 
+  ip          String
+  message     String
+  image       String
+}
